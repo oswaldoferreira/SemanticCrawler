@@ -1,5 +1,8 @@
 package impl;
 
+import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
@@ -9,13 +12,12 @@ import com.hp.hpl.jena.vocabulary.OWL;
 
 import crawler.SemanticCrawler;
 
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
 public class SemanticCrawlerImpl implements SemanticCrawler {
-	Set<RDFNode> visited = new HashSet<RDFNode>();
+	ArrayList<String> visited = new ArrayList<String>();
 	
 	public void search(Model graph, String resourceURI) {
 		graph.read(resourceURI);
@@ -24,26 +26,45 @@ public class SemanticCrawlerImpl implements SemanticCrawler {
 		StmtIterator statements = graph.listStatements((Resource) null, OWL.sameAs, (RDFNode) null);
 		
 		while ( statements.hasNext() ) {
-			rdfDFS( statements.next().getObject(), visited, "");	
+			System.out.println("OUTRO STATEMENT");
+			rdfDFS(graph, statements.nextStatement().getObject(), visited);
 		}
 		
 		System.out.println("------ VISITADOS ("+ visited.size() +") ------");
 		
-		for (RDFNode node : visited) {
-			System.out.println(node);
+		for (String uri : visited) {
+			System.out.println(uri);
 		}
 	}
 	
-	public static void rdfDFS( RDFNode node, Set<RDFNode> visited, String prefix) {
-        if ( !visited.contains( node )) {
-            visited.add( node );
-            
+	public static void rdfDFS(Model graph, RDFNode node, ArrayList<String> visited) {	
+		String newURI = node.asResource().getURI();
+		
+        if ( visited.contains( newURI )) {
+        	return;
+        } else {
 			if ( node.isResource() ) {
-	            StmtIterator stmts = node.asResource().listProperties( OWL.sameAs );
-	            while ( stmts.hasNext() ) {
-	                Statement stmt = stmts.next();
-	                rdfDFS( stmt.getObject(), visited, node + " =[" + stmt.getPredicate() + "]=> " );
-	            }
+				try {
+					Model model = ModelFactory.createDefaultModel();
+					model.read(newURI);
+					
+					StmtIterator stmts = model.listStatements((Resource) null, OWL.sameAs, (RDFNode) null);
+					
+					while ( stmts.hasNext() ) {
+						Statement statement = stmts.nextStatement();
+						
+						Resource subject = statement.getSubject();
+						Resource object  = (Resource) statement.getObject();
+						
+						System.out.println("SEGUINDO -> "+ subject);
+						visited.add(object.getURI());
+							
+						rdfDFS(model, subject, visited);						
+					}
+				} catch (Exception e) {
+					return;
+				}
+				
             }
         }
     }
