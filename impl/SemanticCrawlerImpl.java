@@ -1,8 +1,5 @@
 package impl;
-
-import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
-import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.RDFNode;
@@ -40,26 +37,28 @@ public class SemanticCrawlerImpl implements SemanticCrawler {
 	public static void rdfDFS(Model graph, RDFNode node, ArrayList<String> visited) {	
 		String newURI = node.asResource().getURI();
 		
-        if ( visited.contains( newURI )) {
+        if ( visited.contains( newURI ) ) {
         	return;
         } else {
 			if ( node.isResource() ) {
+				visited.add(newURI);
+				
 				try {
 					Model model = ModelFactory.createDefaultModel();
 					model.read(newURI);
 					
-					StmtIterator stmts = model.listStatements((Resource) null, OWL.sameAs, (RDFNode) null);
+					StmtIterator stmts = model.listStatements((Resource) node, OWL.sameAs, (RDFNode) null);
 					
 					while ( stmts.hasNext() ) {
 						Statement statement = stmts.nextStatement();
-						
 						Resource subject = statement.getSubject();
+						
 						Resource object  = (Resource) statement.getObject();
 						
-						System.out.println("SEGUINDO -> "+ subject);
-						visited.add(object.getURI());
+						System.out.println("SEGUINDO -> "+ object);
 							
-						rdfDFS(model, subject, visited);						
+						rdfDFS(model, subject, visited);
+						rdfDFS(model, object, visited);
 					}
 				} catch (Exception e) {
 					return;

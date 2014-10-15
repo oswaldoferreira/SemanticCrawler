@@ -6,7 +6,7 @@ import impl.SemanticCrawlerImpl;
 
 public class Exec {
 	
-	public static final String INITIAL_URI = "http://dbpedia.org/resource/Zico";
+	public static final String INITIAL_URI = "http://dbpedia.org/resource/Barack_Obama";
 	
 	public static void main(String[] args) {
 		Model model = ModelFactory.createDefaultModel();
